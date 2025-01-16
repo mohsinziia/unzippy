@@ -1,69 +1,85 @@
-import tkinter as tk
-from tkinter import filedialog
 import os
+import os.path
 from unzip import unzip
+import customtkinter as ctk
+from customtkinter import filedialog
+import tkinter as tk
+
+source_file_path = ""
+destination_folder_path = ""
+
+def changePathName(list: tk.Listbox, path: str):
+  list.insert(0, path)
+  list.delete(first=1, last=1)
+
+def selectSourceFile(list: tk.Listbox):
+  global source_file_path
+  source_file_path = filedialog.askopenfilename(defaultextension=".zip", filetypes=[("Zip Files", "*.zip")], initialdir="D:\Mohsin's Stuff\Downloads", title="Select a file")
+  changePathName(list, os.path.basename(source_file_path))
+
+def selectDestinationFolder(list: tk.Listbox):
+  global destination_folder_path
+  destination_folder_path = filedialog.askdirectory(initialdir="D:\Mohsin's Stuff\Downloads", title="Select a folder")
+  changePathName(list, os.path.basename(destination_folder_path))
+
+def unzip_file(label: ctk.CTkLabel):
+  print("unzipping")
+  unzipped_path = destination_folder_path + "/" + os.path.basename(source_file_path)[0:-4]
+  print(unzipped_path)
+
+  if not source_file_path or not destination_folder_path:
+      label.configure(text="Please select source file and destination folder path", text_color="red")
+      print("Please select source file and destination folder path")
+      return
+
+  if os.path.isdir(unzipped_path):
+      print(f"Source file path: {source_file_path}")
+      label.configure(text="Unzipped folder already exists at destination folder path", text_color="red")
+      return
+  
+  unzip(source_file_path, destination_folder_path)
+  label.configure(text="File unzipped successfully", text_color="green")
+  print("File unzipped successfully")
+
 
 def main():
-  class Component:
-    def __init__(self, root, button_text, label_text):
-        self.frame = tk.Frame(root, padx=0, pady=20)
-        self.frame.columnconfigure(0, weight=1)
-        self.path = tk.StringVar()
-        self.button = tk.Button(self.frame, text=button_text, command=self.open_dialog, background="blue", font=('Arial', 20))
-        self.button.grid(row=0, column=0, sticky=tk.W+tk.E)
-        self.path_label = tk.Label(self.frame, text=label_text, font=('Arial', 14), background="green")
-        self.path_label.grid(row=0, column=1, sticky=tk.W+tk.E)
-        self.frame.pack()
+  DARK_COLOR = "#191922"
+  ACCENT_COLOR = "#5D3FD3"
 
-  class SourceFile(Component):
-      def __init__(self, root):
-          super().__init__(root, "Open Source File", "Source File: ")
-      
-      def open_dialog(self):
-          self.path.set(filedialog.askopenfilename(defaultextension=".zip", filetypes=[("Zip Files", "*.zip")], initialdir="D:\Mohsin's Stuff\Downloads", title="Select a file"))
-          self.path_label.config(text=f"Source File: {os.path.basename(self.path.get())}")
+  app = ctk.CTk(fg_color=DARK_COLOR)
+  app.geometry("800x500")
+  app.resizable(width=False, height=False)
+  font_family="Arial Rounded MT Bold"
 
-  class DestinationFolder(Component):
-      def __init__(self, root):
-          super().__init__(root, "Open Destination Folder", "Destination Folder Path: ")
+  unzippy_label = ctk.CTkLabel(master=app, width=400, height=50, text_color="white", font=ctk.CTkFont(family=font_family, size=40))
+  unzippy_label.pack(pady=40)
 
-      def open_dialog(self):
-          self.path.set(filedialog.askdirectory(initialdir="D:\Mohsin's Stuff\Downloads", title="Select a folder"))
-          self.path_label.config(text=f"Destination Folder Path: {self.path.get()}")
+  frame = ctk.CTkFrame(master=app, fg_color=DARK_COLOR, width=500, height=200)
+  frame.grid_propagate(False)
+  frame.columnconfigure(0, weight=0)
+  
+  source_file_listbox = tk.Listbox(master=frame, height=1, border=0, font=(font_family, 20))
+  source_file_listbox.grid(row=0, column=1, sticky=tk.W + tk.E)
+  
+  source_file_button = ctk.CTkButton(master=frame, text="Source File", fg_color=ACCENT_COLOR, corner_radius=20, height=40, text_color="white", cursor="hand2", font=(font_family, 20), command=lambda : selectSourceFile(source_file_listbox))
+  source_file_button.grid(row=0, column=0, sticky=tk.W+tk.E, padx=6)
 
-  class UnzipFile:
-      def __init__(self, root, source_file, destination_path):
-          self.source_file = source_file
-          self.destination_path = destination_path
-          self.button = tk.Button(root, text="Unzip File", comman=self.unzip_file, font=('Arial', 18))
-          self.button.pack()
-          self.label = tk.Label(root, text="", font=('Arial', 14))
-          self.label.pack()
-      
-      def unzip_file(self):
-          unzipped_path = self.destination_path.path.get() + "/" + os.path.basename(self.source_file.path.get())[0:-4]
-          print(unzipped_path)
-          if os.path.isdir(unzipped_path):
-              self.label.config(text="Unzipped folder already exists at destination folder path", foreground="red")
-              return
+  spacer1 = tk.Label(frame, text="", bg=DARK_COLOR, height=5)
+  spacer1.grid(row=1, column=0)
 
-          if self.source_file.path.get() and self.destination_path.path.get():
-              unzip(self.source_file.path.get(), self.destination_path.path.get())
-              self.label.config(text="File unzipped successfully", foreground='green')
-              print("File unzipped successfully")
-          else:
-              self.label.config(text="Please select source file and destination folder path", foreground="red")
-              print("Please select source file and destination folder path")
+  destination_folder_listbox = tk.Listbox(master=frame, height=1, border=0, font=(font_family, 20))
+  destination_folder_listbox.grid(row=2, column=1, sticky=tk.W + tk.E)
 
-  root = tk.Tk()
-  root.title("File List Viewer")
+  destination_folder_button = ctk.CTkButton(master=frame, text="Destination Folder", fg_color=ACCENT_COLOR, text_color='white', corner_radius=20, cursor="hand2", height=40, font=(font_family, 20), command=lambda : selectDestinationFolder(destination_folder_listbox))
+  destination_folder_button.grid(row=2, column=0, sticky=tk.W+tk.E, padx=6)
 
-  root.geometry("1000x300")
-  root.resizable(True, False)
+  frame.pack(pady=(0, 40))
 
-  source_file = SourceFile(root)
-  destination_path = DestinationFolder(root)
-  unzip_file = UnzipFile(root, source_file, destination_path)
+  unzip_status_label = ctk.CTkLabel(master=app, fg_color=DARK_COLOR, padx=10, pady=10, font=(font_family, 20))
+  unzip_status_label.pack()
+
+  unzip_button = ctk.CTkButton(master=app, text="Unzip", fg_color=ACCENT_COLOR, corner_radius=20, height=40, text_color="white", cursor="hand2", font=(font_family, 20), command=lambda: unzip_file(unzip_status_label))
+  unzip_button.pack()
 
 
-  root.mainloop()
+  app.mainloop()
